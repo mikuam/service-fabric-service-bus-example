@@ -4,16 +4,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace MichalBialecki.com.SF.ServiceBusExample.MessageProcessor
 {
     public class ServiceBusCommunicationListener : IServiceBusCommunicationListener
     {
         private readonly IConfigurationRoot _configurationRoot;
-        private SubscriptionClient subscriptionClient;
+        private readonly ILogger _logger;
 
-        public ServiceBusCommunicationListener(IConfigurationRoot configurationRoot)
+        private SubscriptionClient subscriptionClient;
+        
+        public ServiceBusCommunicationListener(IConfigurationRoot configurationRoot, ILoggerFactory loggerFactory)
         {
+            _logger = loggerFactory.CreateLogger(nameof(ServiceBusCommunicationListener));
             _configurationRoot = configurationRoot;
         }
 
@@ -34,12 +38,12 @@ namespace MichalBialecki.com.SF.ServiceBusExample.MessageProcessor
 
                     await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
                 },
-                new MessageHandlerOptions(async args => Console.WriteLine(args.Exception))
+                new MessageHandlerOptions(LogException)
                     { MaxConcurrentCalls = 1, AutoComplete = false });
 
             return Task.FromResult(string.Empty);
         }
-
+        
         public Task CloseAsync(CancellationToken cancellationToken)
         {
             Stop();
@@ -55,7 +59,13 @@ namespace MichalBialecki.com.SF.ServiceBusExample.MessageProcessor
         private void Stop()
         {
             subscriptionClient?.CloseAsync().GetAwaiter().GetResult();
+        }
 
+        private Task LogException(ExceptionReceivedEventArgs args)
+        {
+            _logger.LogError(args.Exception, args.Exception.Message);
+
+            return Task.CompletedTask;
         }
     }
 }

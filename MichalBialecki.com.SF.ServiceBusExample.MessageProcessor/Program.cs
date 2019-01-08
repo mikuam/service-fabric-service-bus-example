@@ -26,7 +26,7 @@ namespace MichalBialecki.com.SF.ServiceBusExample.MessageProcessor
             {
                 await ServiceRuntime.RegisterServiceAsync(ServiceName, CreateService);
 
-                ServiceEventSource.Current.ServiceTypeRegistered(Process.GetCurrentProcess().Id, typeof(MessageProcessor).Name);
+                ServiceEventSource.Current.ServiceTypeRegistered(Process.GetCurrentProcess().Id, typeof(ServiceBusStatelessService).Name);
                 
                 Thread.Sleep(Timeout.Infinite);
             }
